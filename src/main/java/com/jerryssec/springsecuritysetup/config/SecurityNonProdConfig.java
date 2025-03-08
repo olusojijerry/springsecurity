@@ -3,6 +3,7 @@ package com.jerryssec.springsecuritysetup.config;
 import com.jerryssec.springsecuritysetup.exceptionHandling.CustomAccessDeniedHandler;
 import com.jerryssec.springsecuritysetup.exceptionHandling.CustomBasicAuthenticationEntryPoint;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.password.CompromisedPasswordChecker;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -11,6 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.password.HaveIBeenPwnedRestApiPasswordChecker;
 
+@Configuration
 public class SecurityNonProdConfig {
     @Bean
     SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception{
@@ -25,9 +27,10 @@ public class SecurityNonProdConfig {
                         .invalidSessionUrl("/invalidSession")
                         .maximumSessions(1).maxSessionsPreventsLogin(true))
                 .requiresChannel(rcc -> rcc.anyRequest().requiresInsecure())
-                .csrf(csrfConfig -> csrfConfig.disable());
-        http.authorizeHttpRequests((req) -> req.requestMatchers( "/register", "/invalidSession").permitAll()
-                .anyRequest().authenticated());
+                 .csrf(csrfConfig -> csrfConfig.disable());
+        http.authorizeHttpRequests((req) -> req.
+                requestMatchers( "/register", "/invalidSession", "/login/**", "/assets/**").permitAll()
+                .requestMatchers("/dashboard", "/welcome").authenticated());
 //        http.authorizeHttpRequests((req) -> req.anyRequest()
         /*this is to specify apis to be authenticated */
 //                .requestMatchers("").authenticated()
@@ -35,7 +38,9 @@ public class SecurityNonProdConfig {
 
         /*this is to specify apis */
 //                .requestMatchers("").denyAll());
-        http.formLogin(Customizer.withDefaults());
+//        http.formLogin(Customizer.withDefaults());
+//        setting up the login page designed
+        http.formLogin(flc -> flc.loginPage("/login").defaultSuccessUrl("/dashboard"));
         /*this is to disable form login*/
 //        http.formLogin(httpSecurityFormLoginConfigurer -> httpSecurityFormLoginConfigurer.disable() );
 //        here you can setup the entrypoint for authentication
