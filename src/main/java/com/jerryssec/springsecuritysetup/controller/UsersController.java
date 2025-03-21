@@ -25,7 +25,7 @@ public class UsersController {
             customer.setPwd(hashedPwd);
             Customer savedCustomer = customerRepository.save(customer);
             if (savedCustomer.getId() > 0)
-                return ResponseEntity.status(HttpStatus.CREATED).body("Successfully Created user with username: " +customer.getEmail());
+                return ResponseEntity.status(HttpStatus.CREATED).body("Successfully Created user with username: " +customer.getUsername());
             else
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("USer registration failed.");
         }catch(Exception ex){

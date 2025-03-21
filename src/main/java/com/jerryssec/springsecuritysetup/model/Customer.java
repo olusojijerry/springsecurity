@@ -9,7 +9,9 @@ public class Customer {
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     @Column(name = "id", nullable = false)
     private Long id;
-    private String email;
+    @Column(name = "email")
+    private String username;
+
     private String pwd;
     private String role;
 
@@ -21,12 +23,12 @@ public class Customer {
         this.id = id;
     }
 
-    public String getEmail() {
-        return email;
+    public String getUsername() {
+        return username;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public String getPwd() {

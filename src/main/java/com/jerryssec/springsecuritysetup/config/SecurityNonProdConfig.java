@@ -28,8 +28,10 @@ public class SecurityNonProdConfig {
                         .maximumSessions(1).maxSessionsPreventsLogin(true))
                 .requiresChannel(rcc -> rcc.anyRequest().requiresInsecure())
                  .csrf(csrfConfig -> csrfConfig.disable());
-        http.authorizeHttpRequests((req) -> req.
-                requestMatchers( "/register", "/invalidSession", "/login/**", "/assets/**").permitAll()
+        http
+                .csrf((csrf)-> csrf.disable())
+                .authorizeHttpRequests((req) -> req.
+                requestMatchers( "/register", "/login/**", "/assets/**", "/favicon.ico", "/error").permitAll()
                 .requestMatchers("/dashboard", "/welcome").authenticated());
 //        http.authorizeHttpRequests((req) -> req.anyRequest()
         /*this is to specify apis to be authenticated */
@@ -40,7 +42,10 @@ public class SecurityNonProdConfig {
 //                .requestMatchers("").denyAll());
 //        http.formLogin(Customizer.withDefaults());
 //        setting up the login page designed
-        http.formLogin(flc -> flc.loginPage("/login").defaultSuccessUrl("/dashboard"));
+        http.formLogin(flc -> flc.loginPage("/login").defaultSuccessUrl("/dashboard")
+                .failureUrl("/login?error=true"));
+        //changing the username and password parameteres on the webpage
+//        http.formLogin(flc -> flc.loginPage("/login").usernameParameter("usrid").passwordParameter("secretPwd"));
         /*this is to disable form login*/
 //        http.formLogin(httpSecurityFormLoginConfigurer -> httpSecurityFormLoginConfigurer.disable() );
 //        here you can setup the entrypoint for authentication

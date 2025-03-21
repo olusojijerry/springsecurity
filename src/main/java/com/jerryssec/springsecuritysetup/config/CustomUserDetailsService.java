@@ -10,7 +10,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import java.lang.reflect.Array;
 import java.util.Arrays;
 
 @Service
@@ -19,9 +18,9 @@ public class CustomUserDetailsService implements UserDetailsService {
     CustomerRepository customerRepository;
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Customer customer = customerRepository.findByEmail(username)
+        Customer customer = customerRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User details not found"));
 
-        return new User(customer.getEmail(), customer.getPwd(), Arrays.asList(new SimpleGrantedAuthority(customer.getRole())));
+        return new User(customer.getUsername(), customer.getPwd(), Arrays.asList(new SimpleGrantedAuthority(customer.getRole())));
     }
 }

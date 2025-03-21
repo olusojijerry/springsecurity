@@ -19,6 +19,7 @@ import org.springframework.stereotype.Component;
 public class CustomPasswordAuthenticationProvider implements AuthenticationProvider {
     @Autowired
     CustomUserDetailsService customUserDetailsService;
+    @Autowired
     PasswordEncoder passwordEncoder;
 
     @Override
