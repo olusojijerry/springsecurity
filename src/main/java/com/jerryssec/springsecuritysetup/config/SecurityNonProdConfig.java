@@ -2,6 +2,9 @@ package com.jerryssec.springsecuritysetup.config;
 
 import com.jerryssec.springsecuritysetup.exceptionHandling.CustomAccessDeniedHandler;
 import com.jerryssec.springsecuritysetup.exceptionHandling.CustomBasicAuthenticationEntryPoint;
+import com.jerryssec.springsecuritysetup.handler.CustomAuthenticationFailureHandler;
+import com.jerryssec.springsecuritysetup.handler.CustomAuthenticationSuccessHandler;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.password.CompromisedPasswordChecker;
@@ -14,6 +17,10 @@ import org.springframework.security.web.authentication.password.HaveIBeenPwnedRe
 
 @Configuration
 public class SecurityNonProdConfig {
+    @Autowired
+    CustomAuthenticationSuccessHandler customAuthenticationSuccessHandler;
+    @Autowired
+    CustomAuthenticationFailureHandler customAuthenticationFailureHandler;
     @Bean
     SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception{
 //      this allow all api calls to the application
@@ -42,8 +49,13 @@ public class SecurityNonProdConfig {
 //                .requestMatchers("").denyAll());
 //        http.formLogin(Customizer.withDefaults());
 //        setting up the login page designed
-        http.formLogin(flc -> flc.loginPage("/login").defaultSuccessUrl("/dashboard")
-                .failureUrl("/login?error=true"));
+        http.formLogin(flc -> flc.loginPage("/login").usernameParameter("userid").passwordParameter("secretPwd").defaultSuccessUrl("/dashboard")
+                .failureUrl("/login?error=true")
+                .successHandler(customAuthenticationSuccessHandler)
+                .failureHandler(customAuthenticationFailureHandler));
+        http.logout(loc -> loc.logoutSuccessUrl("/login?logout=true").invalidateHttpSession(true)
+                .clearAuthentication(true).deleteCookies("JSESSIONID"));
+
         //changing the username and password parameteres on the webpage
 //        http.formLogin(flc -> flc.loginPage("/login").usernameParameter("usrid").passwordParameter("secretPwd"));
         /*this is to disable form login*/
