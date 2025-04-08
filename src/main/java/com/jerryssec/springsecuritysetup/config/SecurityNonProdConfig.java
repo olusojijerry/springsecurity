@@ -2,18 +2,30 @@ package com.jerryssec.springsecuritysetup.config;
 
 import com.jerryssec.springsecuritysetup.exceptionHandling.CustomAccessDeniedHandler;
 import com.jerryssec.springsecuritysetup.exceptionHandling.CustomBasicAuthenticationEntryPoint;
+import com.jerryssec.springsecuritysetup.filter.CsrfCookieFilter;
 import com.jerryssec.springsecuritysetup.handler.CustomAuthenticationFailureHandler;
 import com.jerryssec.springsecuritysetup.handler.CustomAuthenticationSuccessHandler;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.password.CompromisedPasswordChecker;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.password.HaveIBeenPwnedRestApiPasswordChecker;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.security.web.csrf.CsrfTokenRequestHandler;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+
+import java.util.Arrays;
+import java.util.Collections;
 
 @Configuration
 public class SecurityNonProdConfig {
@@ -23,6 +35,18 @@ public class SecurityNonProdConfig {
     CustomAuthenticationFailureHandler customAuthenticationFailureHandler;
     @Bean
     SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception{
+        CsrfTokenRequestAttributeHandler csrfTokenRequestHandler = new CsrfTokenRequestAttributeHandler();
+        /*Handling CORS error on spring security*/
+        http.cors(corsCustomizer -> corsCustomizer.configurationSource(request -> {
+            CorsConfiguration corsConfiguration = new CorsConfiguration();
+
+            corsConfiguration.setAllowedOrigins(Arrays.asList("http://localhost:4200"));
+            corsConfiguration.setAllowedMethods(Collections.singletonList("*"));
+            corsConfiguration.setAllowCredentials(true);
+            corsConfiguration.setAllowedHeaders(Collections.singletonList("*"));
+            corsConfiguration.setMaxAge(3600L);
+            return corsConfiguration;
+        }));
 //      this allow all api calls to the application
 //        http.authorizeHttpRequests((req) -> req.anyRequest().permitAll());
 //      this disallow all request to the application
@@ -30,13 +54,22 @@ public class SecurityNonProdConfig {
 //        this configuration is used to allow http connections.
 //        the config below is to setup session timeout redirect page and the total number of session a particular user the
 //        maxSessionsPreventsLogin will prevent the user from setting up another session without logging out of the previous session.
-        http.sessionManagement(smc -> smc.sessionFixation(sfc -> sfc.changeSessionId())
+        /*tells spring security not to store the JSESSIONID inside the security context holder let spring security take care of it*/
+        http.securityContext(contextConfig -> contextConfig.requireExplicitSave(false))
+                .sessionManagement(smc -> smc
+                /*Always create session for me (JSESSIONID)*/
+                        .sessionCreationPolicy(SessionCreationPolicy.ALWAYS)
+                        .sessionFixation(sfc -> sfc.changeSessionId())
                         .invalidSessionUrl("/invalidSession")
                         .maximumSessions(1).maxSessionsPreventsLogin(true))
                 .requiresChannel(rcc -> rcc.anyRequest().requiresInsecure())
-                 .csrf(csrfConfig -> csrfConfig.disable());
+                /*Configuring CSRF Token into the cookie implementation*/
+                 .csrf(csrfConfig -> csrfConfig.csrfTokenRequestHandler(csrfTokenRequestHandler)
+                         /*use this to ignore csrf on apis that are for public use*/
+                         .ignoringRequestMatchers("")
+                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
+                .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class);
         http
-                .csrf((csrf)-> csrf.disable())
                 .authorizeHttpRequests((req) -> req.
                 requestMatchers( "/register", "/login/**", "/assets/**", "/favicon.ico", "/error").permitAll()
                 .requestMatchers("/dashboard", "/welcome").authenticated());
